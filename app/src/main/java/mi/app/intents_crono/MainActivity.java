@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.provider.ContactsContract;
 import android.view.View;
 import android.widget.Button;
@@ -12,13 +13,29 @@ import android.widget.TextView;
 
 import java.text.BreakIterator;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     Thread tarea;
+    Handler h = new Handler();
+    Button btn_iniciar, btn_reiniciar;
+    TextView crono;
+
+    boolean encendido = false;
+    int  minutos = 0, seg = 0;
+    long mili = System.currentTimeMillis();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        crono = (TextView) findViewById(R.id.crono);
+        crono.setText("00:00:00");
+        btn_iniciar = (Button)findViewById(R.id.btn_inicio);
+        btn_reiniciar = (Button)findViewById(R.id.btn_reiniciar);
+        btn_reiniciar.setOnClickListener(this);
+        btn_reiniciar.setEnabled(false);
+        btn_iniciar.setOnClickListener(this);
 
 
     }
@@ -79,70 +96,85 @@ public class MainActivity extends AppCompatActivity {
 
     //METODOS PARA EL CRONOMETRO
 
-    public void run() {
-        TextView crono = (TextView) findViewById(R.id.crono);
-        crono.setText("00:00:00");
-        int horas, minutos, segundos;
-        horas = minutos = segundos = 0;
 
-        long msInicial = System.currentTimeMillis();
-        long msActuales;
-
-        while(true){
-            msActuales = System.currentTimeMillis();
-
-            if (msActuales - msInicial > 50)
-            {
-                ++segundos;
-
-                if(segundos == 60)
-                {
-                    segundos = 0;
-                    ++minutos;
-                    if(minutos == 60)
-                    {
-                        minutos = 0;
-                        ++horas;
+    private void iniciarHilo() {
+        tarea = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    if (encendido) { // se activa la variable encendido si se presiona el boton iniciar
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        mili++;
+                        if (mili >= 999) {
+                            seg++;
+                            mili = 0;
+                        }
+                        if (seg >= 59) {
+                            minutos++;
+                            seg = 0;
+                        }
+                        h.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                String m = "", s = "", mi = "";
+                                if (mili < 10) { //Modificar la variacion de los 0
+                                    m = "00" + mili;
+                                } else if (mili <= 100) {
+                                    m = "0" + mili;
+                                } else {
+                                    m = "" + mili;
+                                }
+                                if (seg <= 10) {
+                                    s = "0" + seg;
+                                } else {
+                                    s = "" + seg;
+                                }
+                                if (minutos <= 10) {
+                                    mi = "0" + minutos;
+                                } else {
+                                    mi = "" + minutos;
+                                }
+                                crono.setText(mi + ":" + s + ":" + m);
+                            }
+                        });
                     }
                 }
-                msInicial = msActuales;
-                crono.setText(String.format("%02d:%02d:%02d", horas, minutos, segundos));
             }
-        }
-
-    }
-
-    public void botonIniciar(View view) {
-        Button btn_iniciar = (Button) findViewById(R.id.btn_inicio);
-        Button btn_reiniciar = (Button) findViewById(R.id.btn_reiniciar);
-        String btn = btn_iniciar.getText().toString();
-
-        if(btn.equals("Iniciar"))
-        {
-            tarea = new Thread(this::run);
-            tarea.start(); //Ejecuta el metodo RUN. Esto es el hilo.
-            btn_iniciar.setText("Parar");
-        }
-        else
-        {
-            btn_reiniciar.setEnabled(true);
-            btn_iniciar.setEnabled(false);
-            btn_iniciar.setText("Iniciar");
-        }
-    }
-
-    public void botonReiniciar(View view) {
-        Button btn_iniciar = (Button) findViewById(R.id.btn_inicio);
-        Button btn_reiniciar = (Button) findViewById(R.id.btn_reiniciar);
-        TextView crono = (TextView)findViewById(R.id.crono);
-        crono.setText("00:00:00");
-
-        //Al reiniciar el contador, reiniciamos el hilo
-        tarea = new Thread();
+        });
         tarea.start();
-        btn_iniciar.setEnabled(true);
-        btn_iniciar.setText("Iniciar");
-        btn_reiniciar.setEnabled(false);
-
     }
+
+    public void onClick (View view){
+        switch (view.getId()){
+            case R.id.btn_inicio:
+                if(encendido == false){
+                    btn_iniciar.setText("Parar");
+                    btn_reiniciar.setEnabled(false);
+                    encendido = true;
+                    iniciarHilo();
+                }
+                else{
+                    btn_iniciar.setText("Iniciar");
+                    btn_reiniciar.setEnabled(true);
+                    encendido = false;
+                    iniciarHilo();
+                }
+
+                break;
+            case R.id.btn_reiniciar:
+                encendido = false;
+                mili = 0;
+                seg = 0;
+                minutos = 0;
+                crono.setText("00:00:00");
+                break;
+        }
+    }
+
+
+
 }

@@ -104,7 +104,7 @@
         android:layout_marginRight="68dp"
         android:layout_marginBottom="84dp"
         android:text="Reiniciar"
-        android:onClick="botonReiniciar"
+        android:onClick="onClick"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -129,7 +129,7 @@
         android:layout_marginLeft="84dp"
         android:layout_marginBottom="84dp"
         android:text="Iniciar"
-        android:onClick="botonIniciar"
+        android:onClick="onClick"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
